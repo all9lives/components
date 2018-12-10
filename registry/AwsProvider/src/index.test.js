@@ -2,6 +2,9 @@ import AWS from 'aws-sdk'
 import path from 'path'
 import { createTestContext } from '../../../test'
 
+// TODO: move this into @serverless/utils ?!
+import newVariable from '../../../src/utils/variable/newVariable'
+
 jest.mock('aws-sdk', () => {
   const mocks = {
     update: jest.fn()
@@ -60,6 +63,28 @@ describe('AwsProvider', () => {
       expect(AwsSdk).toEqual(AWS)
       expect(AWS.mocks.update).toBeCalledWith(inputs)
     })
+
+    it('should auto-resolve variables in credentials', async () => {
+      const inputs = {
+        credentials: {
+          accessKeyId: newVariable("${false || 'abc'}", {}),
+          secretAccessKey: newVariable("${false || 'zxc'}", {})
+        },
+        region: 'us-east-1'
+      }
+
+      const awsProvider = await context.construct(AwsProvider, inputs)
+      const AwsSdk = awsProvider.getSdk()
+
+      expect(AwsSdk).toEqual(AWS)
+      expect(AWS.mocks.update).toBeCalledWith({
+        credentials: {
+          accessKeyId: 'abc',
+          secretAccessKey: 'zxc'
+        },
+        region: 'us-east-1'
+      })
+    })
   })
 
   describe('#getCredentials()', () => {
@@ -76,6 +101,27 @@ describe('AwsProvider', () => {
       const credentials = awsProvider.getCredentials()
 
       expect(credentials).toEqual(inputs)
+    })
+
+    it('should auto-resolve variables in credentials', async () => {
+      const inputs = {
+        credentials: {
+          accessKeyId: newVariable("${false || 'abc'}", {}),
+          secretAccessKey: newVariable("${false || 'zxc'}", {})
+        },
+        region: 'us-east-1'
+      }
+
+      const awsProvider = await context.construct(AwsProvider, inputs)
+      const credentials = awsProvider.getCredentials()
+
+      expect(credentials).toEqual({
+        credentials: {
+          accessKeyId: 'abc',
+          secretAccessKey: 'zxc'
+        },
+        region: 'us-east-1'
+      })
     })
   })
 
