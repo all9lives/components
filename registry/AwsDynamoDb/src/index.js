@@ -1,5 +1,5 @@
-import { get, keys, or, pick, resolvable, equals, not } from '@serverless/utils'
-import { createTable, updateTable, deleteTable, ensureTable } from './utils'
+import { get, keys, or, pick, resolve, resolvable, equals, not } from '@serverless/utils'
+import { createTable, updateTable, deleteTable, describeTable, ensureTable } from './utils'
 
 const AwsDynamoDb = (SuperClass) =>
   class extends SuperClass {
@@ -28,6 +28,21 @@ const AwsDynamoDb = (SuperClass) =>
         not(equals(prevInstance.keySchema, this.keySchema))
       ) {
         return 'replace'
+      }
+    }
+
+    async sync() {
+      let { provider, tableName } = this
+      provider = resolve(provider)
+      tableName = resolve(tableName)
+
+      try {
+        await describeTable({ provider, tableName })
+      } catch (error) {
+        if (error.code === 'ResourceNotFoundException') {
+          return 'removed'
+        }
+        throw error
       }
     }
 

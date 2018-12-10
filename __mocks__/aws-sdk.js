@@ -247,6 +247,20 @@ const mocks = {
         TableStatus: 'DELETING'
       }
     })
+  }),
+  describeTableMock: jest.fn().mockImplementation((params) => {
+    if (params.TableName === 'already-removed-table') {
+      const error = new Error()
+      error.code = 'ResourceNotFoundException'
+      return Promise.reject(error)
+    }
+    return Promise.resolve({
+      Table: {
+        TableArn: 'arn:aws:dynamodb:region:XXXXX:table/describe-table',
+        TableName: 'describe-table',
+        TableStatus: 'ACTIVE'
+      }
+    })
   })
 }
 
@@ -427,6 +441,9 @@ const DynamoDB = function() {
     }),
     deleteTable: (obj) => ({
       promise: () => mocks.deleteTableMock(obj)
+    }),
+    describeTable: (obj) => ({
+      promise: () => mocks.describeTableMock(obj)
     })
   }
 }

@@ -343,4 +343,38 @@ describe('AwsDynamoDb', () => {
 
     expect(result).toBe('replace')
   })
+
+  it('sync should return "removed" if the table was removed from the provider', async () => {
+    let awsDynamoDb = await context.construct(AwsDynamoDb, {
+      provider,
+      tableName: 'already-removed-table',
+      provisionedThroughput: {
+        ReadCapacityUnits: 5,
+        WriteCapacityUnits: 5
+      }
+    })
+    awsDynamoDb = await context.defineComponent(awsDynamoDb)
+    awsDynamoDb = resolveComponentEvaluables(awsDynamoDb)
+
+    const result = await awsDynamoDb.sync(context)
+
+    expect(result).toBe('removed')
+  })
+
+  it('sync should NOT return "removed" if the table was not removed from the provider', async () => {
+    let awsDynamoDb = await context.construct(AwsDynamoDb, {
+      provider,
+      tableName: 'describe-table',
+      provisionedThroughput: {
+        ReadCapacityUnits: 5,
+        WriteCapacityUnits: 5
+      }
+    })
+    awsDynamoDb = await context.defineComponent(awsDynamoDb)
+    awsDynamoDb = resolveComponentEvaluables(awsDynamoDb)
+
+    await awsDynamoDb.sync(context)
+
+    expect(awsDynamoDb.tableName).toBe('describe-table')
+  })
 })
